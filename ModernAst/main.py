@@ -1,5 +1,5 @@
 import os
-import TokenMgr # tokens
+import TokenMgr # Менеджер токенов
 
 source = """
 def aa(dd : bool = True):

@@ -1,7 +1,7 @@
 import tokenize
 import io
 import token
-from objects import Token
+from objects import Token, Position
 
 
 """
@@ -31,16 +31,21 @@ class Manager:
         generate_tokens = tokenize.generate_tokens(buffer.readline)
         token_objects = []
 
+        # перебор генератора
         for t in generate_tokens:
+            # позиция токена
+            token_position = Position(t.start, t.end)
+            
+            # создание обьекта токенов
             token_object = Token(
                 t.type,
                 token.tok_name[t.type],
                 t.string,
-                t.start,
-                t.end,
+                token_position,
                 t.line
-                )
+            )
             
+            # добавление в список обьектов токена
             token_objects.append(token_object)
 
         return token_objects
@@ -49,6 +54,6 @@ class Manager:
         """
         Вывод токенов в консоль
         """
-        
+
         for i in self._tokens:
             print(i)
