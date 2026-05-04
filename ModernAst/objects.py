@@ -73,6 +73,28 @@ class Statement(Node):
     pass
 
 
+@dataclass
+class BinaryOp(Node):
+    """
+    Узел для бинарной операции
+
+    Поля:
+        left: левое значение
+        operator: оператор
+        right: правое значение
+
+    Пример:
+        BinaryOp(
+            left=BooleanLiteral(value=True),
+            operator="==",
+            right=BooleanLiteral(value=True)
+        )
+    """
+    left: Expression
+    operator: str
+    right: Expression
+
+
 # литералы
 @dataclass
 class Literal(Expression):
@@ -97,6 +119,18 @@ class Variable(Expression):
     name : str
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(slots=True)
 class IfConstruct(Statement):
-    nodes : list[Node]
+    """
+    Конструкция условий (ветвления)
+
+    Поля:
+        condition: условие
+        then_body: блок операторов для then
+        elif_branches: список elif веток (каждая: условие, тело)
+        else_body: блок операторов для else
+    """
+    condition: Expression
+    then_body: List[Statement] = field(default_factory=list)
+    elif_branches: List[tuple[Expression, List[Statement]]] = field(default_factory=list)
+    else_body: Optional[List[Statement]] = None
