@@ -1,9 +1,9 @@
 import os
 import TokenMgr # Менеджер токенов
+import cfg
 
 source = """
-def aa(dd : bool = True):
-    print(dd)
+f = 10 + 0
 """
 
 def main():
@@ -12,7 +12,8 @@ def main():
     print("tokens: ")
     mgr.print_tokens()
 
-
+    CFG = cfg.ControlFlowGraph(mgr.tokens_list)
+    CFG.analyze()
 
 
 if __name__ == "__main__":

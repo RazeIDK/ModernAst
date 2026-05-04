@@ -1,5 +1,124 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Tuple, Any
+from enum import Enum, auto
+
+
+# операторы
+class Operator(Enum):
+    # арифметические
+    ADD = auto() # +
+    SUB = auto() # -
+    MUL = auto() # *
+    DIV = auto() # /
+    MOD = auto() # %
+    POW = auto() # **
+    FLOOR_DIV = auto() # //
+    
+    # сравнения
+    EQ = auto() # ==
+    NE = auto() # !=
+    LT = auto() # <
+    GT = auto() # >
+    LE = auto() # <=
+    GE = auto() # >=
+    
+    # логические
+    AND = auto() # and
+    OR = auto() # or
+    NOT = auto() # not
+    
+    # битовые
+    BIT_AND = auto() # &
+    BIT_OR = auto() # |
+    BIT_XOR = auto() # ^
+    BIT_NOT = auto() # ~
+    SHIFT_LEFT = auto() # <<
+    SHIFT_RIGHT = auto() # >>
+    
+    def __str__(self):
+        return {
+            Operator.ADD: "+",
+            Operator.SUB: "-",
+            Operator.MUL: "*",
+            Operator.DIV: "/",
+            Operator.MOD: "%",
+            Operator.POW: "**",
+            Operator.FLOOR_DIV: "//",
+            Operator.EQ: "==",
+            Operator.NE: "!=",
+            Operator.LT: "<",
+            Operator.GT: ">",
+            Operator.LE: "<=",
+            Operator.GE: ">=",
+            Operator.AND: "and",
+            Operator.OR: "or",
+            Operator.NOT: "not",
+            Operator.BIT_AND: "&",
+            Operator.BIT_OR: "|",
+            Operator.BIT_XOR: "^",
+            Operator.BIT_NOT: "~",
+            Operator.SHIFT_LEFT: "<<",
+            Operator.SHIFT_RIGHT: ">>",
+        }.get(self, self.name.lower())
+    
+    @classmethod
+    def get_all_symbols(cls) -> list:
+        return (
+            "+",
+            "-",
+            "*",
+            "/",
+            "%",
+            "**",
+            "//",
+            "==",
+            "!=",
+            "<",
+            ">",
+            "<=",
+            ">=",
+            "and",
+            "or",
+            "not"
+            "&",
+            "|",
+            "^",
+            "~",
+            "<<",
+            ">>"
+        )
+    
+    @classmethod
+    def from_string(cls, symbol: str) -> "Operator":
+        symbol_to_operator = {
+            "+": cls.ADD,
+            "-": cls.SUB,
+            "*": cls.MUL,
+            "/": cls.DIV,
+            "%": cls.MOD,
+            "**": cls.POW,
+            "//": cls.FLOOR_DIV,
+            "==": cls.EQ,
+            "!=": cls.NE,
+            "<": cls.LT,
+            ">": cls.GT,
+            "<=": cls.LE,
+            ">=": cls.GE,
+            "and": cls.AND,
+            "or": cls.OR,
+            "not": cls.NOT,
+            "&": cls.BIT_AND,
+            "|": cls.BIT_OR,
+            "^": cls.BIT_XOR,
+            "~": cls.BIT_NOT,
+            "<<": cls.SHIFT_LEFT,
+            ">>": cls.SHIFT_RIGHT,
+        }
+        
+        if symbol not in symbol_to_operator:
+            raise RuntimeError(f"Неизвестный оператор: {symbol}")
+        
+        return symbol_to_operator[symbol]
 
 
 # токены
@@ -51,7 +170,7 @@ class Token:
 
 
 # ноды
-@dataclass(slots=True, frozen=True)
+@dataclass(slots=True)
 class Node:
     """
     Родительский класс узлов AST
@@ -98,25 +217,29 @@ class BinaryOp(Node):
 # литералы
 @dataclass
 class Literal(Expression):
-    value : Any
+    value: Any
 
 @dataclass(slots=True)
 class BooleanLiteral(Literal):
-    value : bool
+    value: bool
 
 @dataclass(slots=True)
 class StringLiteral(Literal):
-    value : str
+    value: str
 
 @dataclass(slots=True)
 class NumberLiteral(Literal):
-    value : float | int
+    value: float | int
+
+@dataclass(slots=True)
+class OperatorLiteral(StringLiteral):
+    value: str
 
 
 # переменные
 @dataclass
 class Variable(Expression):
-    name : str
+    name: str
 
 
 @dataclass(slots=True)
