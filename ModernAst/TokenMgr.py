@@ -4,13 +4,30 @@ import token
 from objects import Token
 
 
+"""
+Менеджер токенов
+Для перевода из генератора в массив
+"""
 class Manager:
     def __init__(self, source_code : str):
-        self.source_code = source_code
-        self.tokens = self.generate_tokens()
+        self._source_code = source_code # исходный код 
+        self._tokens = self.generate_tokens() # массив обьектов токенов
+
+    @property
+    def tokens_list(self):
+        """
+        Получение токенов через аттрибут
+        Для инкапсуляции
+        """
+
+        return self._tokens
 
     def generate_tokens(self):
-        buffer  = io.StringIO(self.source_code)
+        """
+        Преобразовение генератора в массив
+        """
+
+        buffer  = io.StringIO(self._source_code)
         generate_tokens = tokenize.generate_tokens(buffer.readline)
         token_objects = []
 
@@ -29,8 +46,9 @@ class Manager:
         return token_objects
 
     def print_tokens(self):
-        for i in self.tokens:
+        """
+        Вывод токенов в консоль
+        """
+        
+        for i in self._tokens:
             print(i)
-
-    def _get_tokens(self):   
-        return self.tokens
