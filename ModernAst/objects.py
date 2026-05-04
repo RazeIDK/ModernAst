@@ -265,6 +265,10 @@ class Variable(Expression):
     name: str
 
 @dataclass(slots=True)
+class Pass(Statement):
+    pass
+
+@dataclass(slots=True)
 class Call(Expression):
     name: str
     args: list[Expression] = field(default_factory=list)

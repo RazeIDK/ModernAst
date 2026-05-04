@@ -4,6 +4,12 @@ import parser
 
 source = """
 def gg():
+    def nn():
+        pass
+    def jj():
+        pass
+
+def hh():
     pass
 """
 
@@ -14,7 +20,7 @@ def main():
     mgr.print_tokens()
 
     parse = parser.ControlFlowGraph(mgr.tokens_list)
-    parse.analyze()
+    parse.traverse()
 
     print(mgr.tokenize_str())
 
