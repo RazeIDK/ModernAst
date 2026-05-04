@@ -50,30 +50,6 @@ class Token:
     t_line: str
 
 
-# литералы
-@dataclass
-class Literal:
-    value : Any
-
-@dataclass(slots=True)
-class BooleanLiteral(Literal):
-    value : bool
-
-@dataclass(slots=True)
-class StringLiteral(Literal):
-    value : string
-
-@dataclass(slots=True)
-class NumberLiteral(Literal):
-    value : float | int
-
-
-# переменные
-@dataclass
-class Variable:
-    pass # заглушка
-
-
 # ноды
 @dataclass(slots=True, frozen=True)
 class Node:
@@ -86,6 +62,41 @@ class Node:
     node_pos: Position
 
 
+# имеет значение
+@dataclass
+class Expression(Node):
+    pass
+
+# выполняет
+@dataclass
+class Statement(Node):
+    pass
+
+
+# литералы
+@dataclass
+class Literal(Expression):
+    value : Any
+
+@dataclass(slots=True)
+class BooleanLiteral(Literal):
+    value : bool
+
+@dataclass(slots=True)
+class StringLiteral(Literal):
+    value : str
+
+@dataclass(slots=True)
+class NumberLiteral(Literal):
+    value : float | int
+
+
+# переменные
+@dataclass
+class Variable(Expression):
+    name : str
+
+
 @dataclass(slots=True, frozen=True)
-class IfConstruct(Node):
+class IfConstruct(Statement):
     nodes : list[Node]
