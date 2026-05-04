@@ -252,6 +252,21 @@ class Call(Expression):
 
 
 @dataclass(slots=True)
+class Function(Statement):
+    """
+    Обьект функции
+
+    Поля:
+        name: название функции
+        body: тело функции
+        args: аргументы функции
+    """
+    name: str
+    body: list[Statement]
+    args: list[Expression] = field(default_factory=list)
+
+
+@dataclass(slots=True)
 class IfConstruct(Statement):
     """
     Конструкция условий (ветвления)

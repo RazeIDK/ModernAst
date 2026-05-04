@@ -20,7 +20,15 @@ class Manager:
         Для инкапсуляции
         """
 
-        return self._tokens
+        return self._tokens\
+    
+    def tokenize_str(self):
+        lines = []
+        
+        for t in self._tokens:
+            lines.append(t.t_string)
+
+        return lines
 
     def generate_tokens(self):
         """

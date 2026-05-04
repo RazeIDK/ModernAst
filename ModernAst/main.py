@@ -1,6 +1,6 @@
 import os
 import TokenMgr # Менеджер токенов
-import cfg
+import parser
 
 source = """
 f = 10 + 0
@@ -12,8 +12,10 @@ def main():
     print("tokens: ")
     mgr.print_tokens()
 
-    CFG = cfg.ControlFlowGraph(mgr.tokens_list)
-    CFG.analyze()
+    parse = parser.ControlFlowGraph(mgr.tokens_list)
+    parse.analyze()
+
+    print(mgr.tokenize_str())
 
 
 if __name__ == "__main__":

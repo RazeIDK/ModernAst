@@ -17,10 +17,6 @@ class ControlFlowGraph:
     def analyze(self):
         count_tokens_objects = len(self._tokens_objects)
 
-        analyze_now = {
-            "" : ""
-        }
-
         for i in range(count_tokens_objects - 1):
             token_object = self._tokens_objects[i]
 
