@@ -1,17 +1,34 @@
 from objects import *
+import keyword
 
+
+"""
+Построение CFG
+"""
 class ControlFlowGraph:
     def __init__(self, tokens_objects : list):
-        self.tokens_objects = tokens_objects
+        self._tokens_objects = tokens_objects
+        self._keywords = keyword.kwlist
+        self._ast = []
+
+    def build_blocks(self):
+        pass
 
     def analyze(self):
-        count_tokens_objects = len(self.tokens_objects)
-        stack = []
+        count_tokens_objects = len(self._tokens_objects)
+
+        analyze_now = {
+            "" : ""
+        }
 
         for i in range(count_tokens_objects - 1):
-            token_object = self.tokens_objects[i]
+            token_object = self._tokens_objects[i]
 
             match token_object.t_name:
-                case "OP":
-                    if token_object.t_string in Operator.get_all_symbols():
-                        print(Operator.from_string(token_object.t_string))
+                case "NAME":
+                    if token_object.t_string in self._keywords:
+                        match token_object.t_string:
+                            case "def":
+                                pass
+                    else:
+                        pass

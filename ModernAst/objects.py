@@ -79,7 +79,7 @@ class Operator(Enum):
             ">=",
             "and",
             "or",
-            "not"
+            "not",
             "&",
             "|",
             "^",
@@ -231,15 +231,24 @@ class StringLiteral(Literal):
 class NumberLiteral(Literal):
     value: float | int
 
-@dataclass(slots=True)
-class OperatorLiteral(StringLiteral):
-    value: str
 
-
-# переменные
 @dataclass
 class Variable(Expression):
+    """
+    Переменная
+
+    Поля:
+        name: название
+    
+    Пример:
+        Variable(name="test")
+    """
     name: str
+
+@dataclass(slots=True)
+class Call(Expression):
+    name: str
+    args: list[Expression] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -254,6 +263,6 @@ class IfConstruct(Statement):
         else_body: блок операторов для else
     """
     condition: Expression
-    then_body: List[Statement] = field(default_factory=list)
-    elif_branches: List[tuple[Expression, List[Statement]]] = field(default_factory=list)
-    else_body: Optional[List[Statement]] = None
+    then_body: list[Statement] = field(default_factory=list)
+    elif_branches: list[tuple[Expression, list[Statement]]] = field(default_factory=list)
+    else_body: Optional[list[Statement]] = None
