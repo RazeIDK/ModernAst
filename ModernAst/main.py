@@ -3,7 +3,8 @@ import TokenMgr # Менеджер токенов
 import parser
 
 source = """
-f = 10 + 0
+def gg():
+    pass
 """
 
 def main():

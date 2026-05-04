@@ -168,6 +168,25 @@ class Token:
     t_pos: Position
     t_line: str
 
+@dataclass
+class Block:
+    """
+    Блок кода для cfg
+
+    Поля:
+        level: уровень вложенности (табы)
+        tokens: токены в блоке
+        parent: родительский блок
+        children: вложенные блоки
+    """
+    level: int
+    tokens: List[Any]
+    parent: Optional["Block"] = None
+    children: List["Block"] = None
+    
+    def __post_init__(self):
+        self.children = []
+
 
 # ноды
 @dataclass(slots=True)
@@ -262,7 +281,7 @@ class Function(Statement):
         args: аргументы функции
     """
     name: str
-    body: list[Statement]
+    body: list[Statement] = field(default_factory=list)
     args: list[Expression] = field(default_factory=list)
 
 
