@@ -171,7 +171,7 @@ class Token:
 @dataclass
 class Block:
     """
-    Блок кода для cfg
+    Блок кода
 
     Поля:
         level: уровень вложенности (табы)
@@ -301,6 +301,15 @@ class IfConstruct(Statement):
         else_body: блок операторов для else
     """
     condition: Expression
-    then_body: list[Statement] = field(default_factory=list)
+    body: list[Statement] = field(default_factory=list)
     elif_branches: list[tuple[Expression, list[Statement]]] = field(default_factory=list)
     else_body: Optional[list[Statement]] = None
+
+@dataclass(slots=True)
+class ElifConstruct(Statement):
+    condition: Expression
+    body: list[Statement] = field(default_factory=list)
+
+@dataclass(slots=True)
+class ElseConstruct(Statement):
+    body: list[Statement] = field(default_factory=list)
