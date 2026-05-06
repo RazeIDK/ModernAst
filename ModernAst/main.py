@@ -3,12 +3,7 @@ import TokenMgr # Менеджер токенов
 import parser
 
 source = """
-if True == True:
-    pass
-elif True == False:
-    pass
-else:
-    pass
+one.five()
 """
 
 def main():

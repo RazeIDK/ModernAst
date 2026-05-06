@@ -251,26 +251,30 @@ class NumberLiteral(Literal):
     value: float | int
 
 
-@dataclass
-class Variable(Expression):
-    """
-    Переменная
-
-    Поля:
-        name: название
-    
-    Пример:
-        Variable(name="test")
-    """
-    name: str
-
 @dataclass(slots=True)
 class Pass(Statement):
     pass
 
+
+@dataclass(slots=True)
+class Object(Expression):
+    name : str
+
+@dataclass(slots=True)
+class Method(Object):
+    pass
+
+@dataclass(slots=True)
+class Attribute(Object):
+    pass
+
+@dataclass
+class Variable(Object):
+    pass
+
 @dataclass(slots=True)
 class Call(Expression):
-    name: str
+    objects : list[Object]
     args: list[Expression] = field(default_factory=list)
 
 

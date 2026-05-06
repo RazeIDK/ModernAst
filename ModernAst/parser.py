@@ -8,8 +8,13 @@ from typing import List, Any
 class Context(Enum):
     NULL = auto()
 
+    NAME = auto()
+
     FUNCTION_CREATE = auto()
     FUNCTION_NAME = auto()
+
+    FUNCTION_CALL = auto()
+    METHOD_CALL = auto()
 
     IFCONSTRUCT_CREATE = auto()
     IFCONSTRUCT_CONDITION = auto()
@@ -351,13 +356,59 @@ class AstBuilder:
                                 context = Context.FUNCTION_NAME
                             case Context.IFCONSTRUCT_CREATE | Context.ELIF_CREATE | Context.ELSE_CREATE:
                                 stack.append(token_object)
-                            case _:
-                                var_node = Variable(node_pos=token_object.t_pos, name=token_object.t_string)
-                                local_ast.append(var_node)
+                            case Context.NULL:
+                                context = Context.NAME
+                                stack.append(token_object)
+                            case Context.METHOD_CALL:
+                                stack.append(token_object)
 
                 case "OP":
                     if context != Context.NULL:
                         match context:
+                            case Context.NAME | Context.METHOD_CALL:
+                                match token_object.t_string:
+                                    case ".":
+                                        stack.append(token_object)
+                                        context = Context.METHOD_CALL
+                                    case "(":
+                                        if context != Context.METHOD_CALL:
+                                            context = Context.FUNCTION_CALL
+                                    case ")":
+                                        if context == Context.FUNCTION_CALL:
+                                            context = Context.NULL
+                                            start = stack[0].t_pos.start
+                                            end = token_object.t_pos.end
+
+                                            pos = Position(start, end)
+                                            call_function = Call(pos, stack[0].t_string)
+                                            local_ast.append(call_function)
+                                        elif context == Context.METHOD_CALL:
+                                            context = Context.NULL
+
+                                            len_names = (len(stack) +1) // 2
+                                            len_ops = len(stack) - len_names
+
+                                            start = stack[0].t_pos.start
+                                            end = stack[1].t_pos.end
+                                            pos = Position(start, end)
+                                            var_node = Variable(stack[0].t_pos, stack[0].t_string)
+                                            method_node = Method(stack[-1].t_pos, stack[-1].t_string)
+
+                                            if len_names == 2:
+                                                call_node = Call(pos, (var_node, method_node))
+                                            else:
+                                                attrs = []
+                                                for obj in stack[1:-1]:
+                                                    if obj.t_name == "NAME":
+                                                        attrs.append(Attribute(obj.t_pos, obj.t_string))
+
+                                                attrs.append(method_node)
+                                                attrs.insert(0, var_node)
+                                                call_node = Call(pos, attrs)
+                                            
+                                            print(call_node)
+                                            stack = []
+                                    
                             case Context.FUNCTION_NAME:
                                 if token_object.t_string == ":":
                                     if len(stack) >= 2:
