@@ -279,6 +279,15 @@ class Call(Expression):
 
 
 @dataclass(slots=True)
+class Module(Object):
+    pass
+
+@dataclass(slots=True)
+class Import(Statement):
+    module : Module
+
+
+@dataclass(slots=True)
 class Function(Statement):
     """
     Обьект функции

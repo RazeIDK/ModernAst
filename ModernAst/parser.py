@@ -10,6 +10,8 @@ class Context(Enum):
 
     NAME = auto()
 
+    IMPORT_CREATE = auto()
+
     FUNCTION_CREATE = auto()
     FUNCTION_NAME = auto()
 
@@ -276,6 +278,7 @@ class AstBuilder:
         """
         Парсит токены в AST
         """
+
         count_tokens = len(tokens)
         context = Context.NULL
         stack = []
@@ -289,11 +292,19 @@ class AstBuilder:
             match token_object.t_name:
                 case "NUMBER":
                     match context:
-                        case Context.IFCONSTRUCT_CREATE:
+                        case Context.IFCONSTRUCT_CREATE | Context.ELIF_CREATE | Context.ELSE_CREATE:
                             stack.append(token_object)
                         case _:
                             num_node = NumberLiteral(node_pos=token_object.t_pos, value=int(token_object.t_string))
                             local_ast.append(num_node)
+
+                case "STRING":
+                    match context:
+                        case Context.IFCONSTRUCT_CREATE | Context.ELIF_CREATE | Context.ELSE_CREATE:
+                            stack.append(token_object)
+                        case _:
+                            str_node = StringLiteral(node_pos=token_object.t_pos, value=token_object.t_string.strip('"\''))
+                            local_ast.append(str_node)
 
                 case "NAME":
                     if token_object.t_string in self._keywords:
@@ -302,45 +313,41 @@ class AstBuilder:
                                 stack = []
                                 context = Context.FUNCTION_CREATE
                                 stack.append(token_object)
-
                             case "if":
                                 stack = []
                                 context = Context.IFCONSTRUCT_CREATE
                                 current_if = None
-
                             case "elif":
                                 context = Context.ELIF_CREATE
                                 stack = []
-
                             case "else":
                                 context = Context.ELSE_CREATE
                                 stack = []
-
+                            case "import":
+                                context = Context.IMPORT_CREATE
+                                stack = []
+                                stack.append(token_object)
                             case "pass":
                                 pass_object = Pass(node_pos=token_object.t_pos)
                                 local_ast.append(pass_object)
-
                             case "True":
                                 if context in (Context.IFCONSTRUCT_CREATE, Context.ELIF_CREATE, Context.ELSE_CREATE):
                                     stack.append(token_object)
                                 else:
                                     bool_node = BooleanLiteral(node_pos=token_object.t_pos, value=True)
                                     local_ast.append(bool_node)
-
                             case "False":
                                 if context in (Context.IFCONSTRUCT_CREATE, Context.ELIF_CREATE, Context.ELSE_CREATE):
                                     stack.append(token_object)
                                 else:
                                     bool_node = BooleanLiteral(node_pos=token_object.t_pos, value=False)
                                     local_ast.append(bool_node)
-
                             case "and" | "or" | "not":
                                 if context in (Context.IFCONSTRUCT_CREATE, Context.ELIF_CREATE):
                                     stack.append(token_object)
                                 else:
                                     var_node = Variable(node_pos=token_object.t_pos, name=token_object.t_string)
                                     local_ast.append(var_node)
-
                             case _:
                                 if context in (Context.IFCONSTRUCT_CREATE, Context.ELIF_CREATE, Context.ELSE_CREATE):
                                     stack.append(token_object)
@@ -357,58 +364,102 @@ class AstBuilder:
                             case Context.IFCONSTRUCT_CREATE | Context.ELIF_CREATE | Context.ELSE_CREATE:
                                 stack.append(token_object)
                             case Context.NULL:
-                                context = Context.NAME
-                                stack.append(token_object)
+                                if i + 1 < count_tokens and tokens[i + 1].t_string == "(":
+                                    context = Context.FUNCTION_CALL
+                                    stack.append(token_object)
+                                else:
+                                    context = Context.NAME
+                                    stack.append(token_object)
                             case Context.METHOD_CALL:
                                 stack.append(token_object)
+                            case Context.IMPORT_CREATE:
+                                context = Context.NULL
+                                start = stack[0].t_pos.start
+                                end = token_object.t_pos.end
+                                pos = Position(start, end)
+                                module = Module(token_object.t_pos, token_object.t_string)
+                                import_node = Import(pos, module)
+                                local_ast.append(import_node)
+                                stack = []
 
                 case "OP":
                     if context != Context.NULL:
                         match context:
-                            case Context.NAME | Context.METHOD_CALL:
+                            case Context.FUNCTION_CALL:
                                 match token_object.t_string:
-                                    case ".":
-                                        stack.append(token_object)
-                                        context = Context.METHOD_CALL
                                     case "(":
-                                        if context != Context.METHOD_CALL:
-                                            context = Context.FUNCTION_CALL
+                                        stack.append(token_object)
                                     case ")":
-                                        if context == Context.FUNCTION_CALL:
-                                            context = Context.NULL
-                                            start = stack[0].t_pos.start
+                                        context = Context.NULL
+                                        func_name_token = None
+                                        for item in stack:
+                                            if hasattr(item, "t_name") and item.t_name == "NAME":
+                                                func_name_token = item
+                                                break
+                                        if func_name_token:
+                                            start = func_name_token.t_pos.start
                                             end = token_object.t_pos.end
-
                                             pos = Position(start, end)
-                                            call_function = Call(pos, stack[0].t_string)
+                                            call_function = Call(pos, Variable(func_name_token.t_pos, func_name_token.t_string))
                                             local_ast.append(call_function)
-                                        elif context == Context.METHOD_CALL:
+                                        stack = []
+                                    case _:
+                                        stack.append(token_object)
+
+                            case Context.METHOD_CALL:
+                                match token_object.t_string:
+                                    case "(":
+                                        stack.append(token_object)
+                                    case ")":
+                                        context = Context.NULL
+                                        len_names = (len(stack) + 1) // 2
+                                        start = stack[0].t_pos.start
+                                        end = stack[1].t_pos.end
+                                        pos = Position(start, end)
+                                        var_node = Variable(stack[0].t_pos, stack[0].t_string)
+                                        method_node = Method(stack[-1].t_pos, stack[-1].t_string)
+                                        if len_names == 2:
+                                            call_node = Call(pos, (var_node, method_node))
+                                        else:
+                                            attrs = []
+                                            for obj in stack[1:-1]:
+                                                if obj.t_name == "NAME":
+                                                    attrs.append(Attribute(obj.t_pos, obj.t_string))
+                                            attrs.append(method_node)
+                                            attrs.insert(0, var_node)
+                                            call_node = Call(pos, attrs)
+                                        local_ast.append(call_node)
+                                        stack = []
+                                    case _:
+                                        stack.append(token_object)
+
+                            case Context.NAME:
+                                match token_object.t_string:
+                                    case "=":
+                                        if len(stack) == 1 and i + 1 < count_tokens:
+                                            var_node = stack[0]
+                                            right_tokens = []
+                                            j = i + 1
+                                            while j < count_tokens and tokens[j].t_name != "NEWLINE":
+                                                right_tokens.append(tokens[j])
+                                                j += 1
+                                            right_expr = self.build_expression_from_tokens(right_tokens)
+                                            if right_expr:
+                                                assign_node = Assign(
+                                                    node_pos=Position(var_node.t_pos.start, right_expr.node_pos.end),
+                                                    left=Variable(var_node.t_pos, var_node.t_string),
+                                                    right=right_expr
+                                                )
+                                                local_ast.append(assign_node)
+                                            i = j - 1
                                             context = Context.NULL
-
-                                            len_names = (len(stack) +1) // 2
-                                            len_ops = len(stack) - len_names
-
-                                            start = stack[0].t_pos.start
-                                            end = stack[1].t_pos.end
-                                            pos = Position(start, end)
-                                            var_node = Variable(stack[0].t_pos, stack[0].t_string)
-                                            method_node = Method(stack[-1].t_pos, stack[-1].t_string)
-
-                                            if len_names == 2:
-                                                call_node = Call(pos, (var_node, method_node))
-                                            else:
-                                                attrs = []
-                                                for obj in stack[1:-1]:
-                                                    if obj.t_name == "NAME":
-                                                        attrs.append(Attribute(obj.t_pos, obj.t_string))
-
-                                                attrs.append(method_node)
-                                                attrs.insert(0, var_node)
-                                                call_node = Call(pos, attrs)
-                                            
-                                            print(call_node)
                                             stack = []
-                                    
+                                    case "(":
+                                        context = Context.FUNCTION_CALL
+                                        stack.append(token_object)
+                                    case _:
+                                        stack.append(token_object)
+
                             case Context.FUNCTION_NAME:
                                 if token_object.t_string == ":":
                                     if len(stack) >= 2:
@@ -416,7 +467,6 @@ class AstBuilder:
                                         end_pos = token_object.t_pos.end
                                         pos = Position(start_pos, end_pos)
                                         name_function = stack[1].t_string if len(stack) > 1 else stack[0].t_string
-
                                         function_object = Function(
                                             node_pos=pos,
                                             name=name_function,
@@ -435,7 +485,6 @@ class AstBuilder:
                                 elif token_object.t_string == ":":
                                     context = Context.NULL
                                     condition = self.build_expression_from_tokens(stack)
-
                                     if_node = IfConstruct(
                                         node_pos=Position(
                                             stack[0].t_pos.start if stack else token_object.t_pos.start,
@@ -461,7 +510,6 @@ class AstBuilder:
                                     stack.append(token_object)
                                 elif token_object.t_string == ":":
                                     condition = self.build_expression_from_tokens(stack)
-
                                     if current_if:
                                         current_if.elif_branches.append((condition, []))
                                     context = Context.NULL
@@ -481,8 +529,14 @@ class AstBuilder:
                                     stack = []
                                 else:
                                     stack.append(token_object)
+
+                            case _:
+                                stack.append(token_object)
                     else:
-                        stack.append(token_object)
+                        if token_object.t_name == "OP" and token_object.t_string in Operator.get_all_symbols():
+                            stack.append(token_object)
+                        else:
+                            stack.append(token_object)
 
                 case _:
                     pass
